@@ -1,0 +1,75 @@
+- hosts: epimarket
+  become: true
+  tasks:
+    - name: "System OS details"
+      fail: msg="Incorrect OS, got {{ansible_distribution}} {{ansible_distribution_major_version}} but expected Debian 11"
+      when: (ansible_facts['distribution'] != "Debian" or ansible_facts['distribution_major_version'] != "11")
+    - name: Installation install software-properties-common
+      apt: name=software-properties-common
+
+    - name: "Updating the repo"
+      apt: update_cache=yes
+
+    - name: Installation PHP 7.4
+      apt: name=php7.4 state=present
+
+    - name: install php & it's modules
+      apt:
+        pkg:
+          - php7.4-mysql
+          - php7.4-curl
+          - php7.4-json
+          - php7.4-cgi
+          - php7.4-xsl
+          - php7.4-cgi
+          - php7.4-gd
+          - php7.4-mbstring
+          - php7.4-zip
+          - php7.4-xmlrpc
+          - php7.4-soap
+          - php7.4-intl
+          - libapache2-mod-php
+          - php7.4-cli
+          - git
+        state: latest
+        update_cache: yes
+    - name: isntall curl
+      apt:
+        name: curl
+        state: latest
+        update_cache: yes
+    - name: install composer
+      ansible.builtin.command:
+        cmd: php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+        cmd: php -r "if (hash_file('sha384', 'composer-setup.php') === '55ce33d7678c5a611085589f1f3ddf8b3c52d662cd01d4ba75c0ee0459970c2200a51f492d557530c71c15d8dba01eae') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+        cmd: php composer-setup.php
+        cmd: php -r "unlink('composer-setup.php');"
+        cmd: php -r "readfile('https://getcomposer.org/installer');" | php
+    - name: install symfony
+      ansible.builtin.command:
+        cmd: echo 'deb [trusted=yes] https://repo.symfony.com/apt/ /' | sudo tee /etc/apt/sources.list.d/symfony-cli.list
+        cmd: sudo apt update
+        cmd: sudo apt install symfony-cli
+    - name: Install MySQL server
+      apt:
+        name: default-mysql-server
+        state: latest
+        update_cache: yes
+    - name: Install MySQL client
+      apt:
+        name: default-mysql-client
+        state: latest
+        update_cache: yes
+    - name: Make sure mysql service is running
+      service:
+        name: mysql
+        state: started
+        enabled: True
+    - name: install packages in app
+      ansible.builtin.command:
+        cmd: git clone git@github.com:EpitechMscProPromo2024/T-WEB-600-PAR-6-1-ecommerce-thi-hien.pham.git
+        cmd: cd ./T-WEB-600-PAR-6-1-ecommerce-thi-hien.pham/app
+        cmd: php /bin/console doctrine:database:create --if-not-exists   	
+        cmd: php bin/console make:migration
+        cmd: php bin/console doctrine:migrations:migrate
+        cmd: symfony server:start

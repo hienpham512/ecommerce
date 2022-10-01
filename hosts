@@ -1,0 +1,2 @@
+[epimarket]
+172.16.253.128 ansible_user=hien ansible_ssh_pass=hien ansible_sudo_pass=hien
